@@ -17,6 +17,8 @@
 
 不是拼音（`sibada-vps-shenghesai-jifang...`），不是机翻长句，是人类编辑水准的 3-6 词 SEO slug——地名、品牌、意图全部翻准。
 
+> 💡 **基本免费**：通过[邀请链接](https://cloud.siliconflow.cn/i/tJXyk0DQ)注册硅基流动，**注册双方都会获得赠送额度**；每个 slug 消耗不到 0.001 元，赠送额度就足够用很多年。
+
 ## 为什么
 
 - WordPress 默认把中文标题编码成 `%e6%96%af%e5%b7%b4...` 这种谁都看不懂的链接
@@ -28,7 +30,7 @@
 ## 3 分钟上手
 
 1. [下载最新版](../../releases) 并在 WP 后台 插件 → 上传安装,或将 `ai-slug.php` 放入 `wp-content/plugins/ai-slug/` 后启用
-2. 注册 [硅基流动](https://cloud.siliconflow.cn/i/tJXyk0DQ) 拿 API Key（👆 邀请链接注册，**双方都会获得赠送额度**；也支持任何 OpenAI 兼容接口）
+2. 注册 [硅基流动](https://cloud.siliconflow.cn/i/tJXyk0DQ) 拿 API Key（👆 通过邀请链接注册，**双方都会获得赠送额度，而且赠送的额度就足够本插件长期使用——相当于免费**；也支持任何 OpenAI 兼容接口）
 3. WP 后台 → 设置 → AI Slug,粘贴 Key,点 **测试连接**
 4. 完事。以后发中文标题的文章,slug 自动变英文
 

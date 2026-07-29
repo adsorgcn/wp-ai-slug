@@ -288,7 +288,7 @@ class AISlug_Plugin {
 					<tr><th>API Key</th><td>
 						<input type="password" name="api_key" class="regular-text" autocomplete="new-password"
 							placeholder="<?php echo $opts['api_key'] ? '已配置(留空保持不变)' : 'sk-...'; ?>">
-						<p class="description">硅基流动或其他 OpenAI 兼容服务的 API Key。还没有账号?<a href="https://cloud.siliconflow.cn/i/tJXyk0DQ" target="_blank" rel="noopener">用邀请链接注册</a>双方都会获得赠送额度。留空表示保持现有密钥不变。</p>
+						<p class="description">硅基流动或其他 OpenAI 兼容服务的 API Key。还没有账号?<a href="https://cloud.siliconflow.cn/i/tJXyk0DQ" target="_blank" rel="noopener">用邀请链接注册</a>,双方都会获得赠送额度,而且赠送额度就足够本插件长期使用(每个 slug 不到 0.001 元)。留空表示保持现有密钥不变。</p>
 					</td></tr>
 					<tr><th>API 地址</th><td>
 						<input type="url" name="api_base" class="regular-text" value="<?php echo esc_attr( $opts['api_base'] ); ?>">
