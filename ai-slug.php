@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: AI Slug - 中文标题智能英文链接
+ * Plugin Name: AI Slug
  * Plugin URI: https://github.com/adsorgcn/wp-ai-slug
- * Description: 发文时用 AI 自动把中文标题翻译成精炼的英文 URL slug。告别百分号乱码和生硬拼音;生成失败自动回退默认行为,绝不阻塞发布。OpenAI 兼容接口,默认硅基流动。
+ * Description: Automatically turn non-English post titles into clean, readable English URL slugs using AI. Falls back to the WordPress default if generation fails, so publishing is never blocked. Works with any OpenAI-compatible endpoint.
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -217,23 +217,32 @@ class AISlug_Plugin {
 			wp_die( '权限不足' );
 		}
 		check_admin_referer( 'aislug_save' );
-		$old  = self::opts();
-		$base = isset( $_POST['api_base'] ) ? esc_url_raw( trim( wp_unslash( $_POST['api_base'] ) ), array( 'https' ) ) : $old['api_base'];
+		$old = self::opts();
+
+		$base_in = isset( $_POST['api_base'] ) ? sanitize_text_field( wp_unslash( $_POST['api_base'] ) ) : '';
+		$base    = '' !== $base_in ? esc_url_raw( trim( $base_in ), array( 'https' ) ) : $old['api_base'];
 		if ( '' === $base || 0 !== strpos( $base, 'https://' ) ) {
 			$base = 'https://api.siliconflow.cn'; // 密钥走请求头,只允许 https
 		}
-		$model = isset( $_POST['model'] ) ? sanitize_text_field( trim( wp_unslash( $_POST['model'] ) ) ) : $old['model'];
+
+		$model_in = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
+		$model    = trim( $model_in );
 		if ( '' === $model || ! preg_match( '#^[\w.\-]+(/[\w.\-]+)*$#', $model ) ) {
 			$model = $old['model'];
 		}
+
+		$context = isset( $_POST['site_context'] ) ? sanitize_textarea_field( wp_unslash( $_POST['site_context'] ) ) : $old['site_context'];
+
+		// 密钥留空 = 保持原值(避免每次保存都要重填)
+		$key_in  = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+		$api_key = '' !== trim( $key_in ) ? trim( $key_in ) : $old['api_key'];
+
 		$new = array(
 			'enabled'      => empty( $_POST['enabled'] ) ? 0 : 1,
 			'api_base'     => $base,
 			'model'        => $model,
-			'site_context' => isset( $_POST['site_context'] ) ? sanitize_textarea_field( wp_unslash( $_POST['site_context'] ) ) : $old['site_context'],
-			// 密钥留空 = 保持原值(避免每次保存都要重填)
-			'api_key'      => ( isset( $_POST['api_key'] ) && '' !== trim( wp_unslash( $_POST['api_key'] ) ) )
-				? sanitize_text_field( trim( wp_unslash( $_POST['api_key'] ) ) ) : $old['api_key'],
+			'site_context' => $context,
+			'api_key'      => $api_key,
 		);
 		update_option( self::OPTION, $new, false );
 		delete_transient( self::OPTION . '_backoff' ); // 改完配置立即重试
@@ -262,19 +271,26 @@ class AISlug_Plugin {
 		$last_error = get_option( self::OPTION . '_last_error' );
 		$in_backoff = (bool) get_transient( self::OPTION . '_backoff' );
 		$is_preset  = array_key_exists( $opts['model'], self::models() );
+
+		// 以下三个查询参数只是本插件自身 redirect 回来的状态提示,不改变任何数据,故不需要 nonce。
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$notice_saved = isset( $_GET['saved'] );
+		$notice_ok    = isset( $_GET['test_ok'] ) ? rawurldecode( sanitize_text_field( wp_unslash( $_GET['test_ok'] ) ) ) : '';
+		$notice_err   = isset( $_GET['test_error'] ) ? rawurldecode( sanitize_text_field( wp_unslash( $_GET['test_error'] ) ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		?>
 		<div class="wrap">
 			<h1>AI Slug 设置</h1>
 			<p class="description">发文时自动把中文标题生成英文 URL slug。纯英文标题、已手工指定 slug、已发布的旧文都不会触发;生成失败自动回退默认行为并退避 10 分钟,不影响发布。</p>
 
-			<?php if ( isset( $_GET['saved'] ) ) : ?>
+			<?php if ( $notice_saved ) : ?>
 				<div class="notice notice-success"><p>已保存。</p></div>
 			<?php endif; ?>
-			<?php if ( isset( $_GET['test_ok'] ) ) : ?>
-				<div class="notice notice-success"><p>连接正常!测试标题"春节回家高铁抢票的十个实用技巧" → <code><?php echo esc_html( rawurldecode( sanitize_text_field( wp_unslash( $_GET['test_ok'] ) ) ) ); ?></code></p></div>
+			<?php if ( '' !== $notice_ok ) : ?>
+				<div class="notice notice-success"><p>连接正常!测试标题"春节回家高铁抢票的十个实用技巧" → <code><?php echo esc_html( $notice_ok ); ?></code></p></div>
 			<?php endif; ?>
-			<?php if ( isset( $_GET['test_error'] ) ) : ?>
-				<div class="notice notice-error"><p>测试失败:<?php echo esc_html( rawurldecode( sanitize_text_field( wp_unslash( $_GET['test_error'] ) ) ) ); ?></p></div>
+			<?php if ( '' !== $notice_err ) : ?>
+				<div class="notice notice-error"><p>测试失败:<?php echo esc_html( $notice_err ); ?></p></div>
 			<?php endif; ?>
 			<?php if ( $in_backoff ) : ?>
 				<div class="notice notice-warning"><p>最近一次生成失败,当前处于退避期(最长 10 分钟)。保存设置可立即解除。</p></div>

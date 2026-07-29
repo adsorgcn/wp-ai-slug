@@ -1,6 +1,6 @@
-=== AI Slug - 中文标题智能英文链接 ===
+=== AI Slug ===
 Contributors: adsorgcn
-Tags: slug, permalink, chinese, ai, seo
+Tags: slug, permalink, seo, translation, ai
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
@@ -8,41 +8,64 @@ Stable tag: 1.0.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
-发文时用 AI 自动把中文标题翻译成精炼的英文 URL slug,告别百分号乱码和生硬拼音。
+Automatically turn non-English post titles into clean, readable English URL slugs using AI.
 
 == Description ==
 
-WordPress 默认把中文标题编码成百分号乱码链接,拼音插件生成的 slug 又长又没有 SEO 价值。AI Slug 在你保存文章时,把中文标题交给大模型翻译成 3-6 个词的英文 slug——地名、品牌、意图都翻准,达到人类编辑水准。
+When a post title is written in Chinese, Japanese, Korean, Arabic, Russian or any other non-Latin script, WordPress falls back to percent-encoded slugs such as `%e6%96%af%e5%b7%b4...`. Those URLs are unreadable, hard to share, and carry no SEO value.
 
-= 特性 =
+AI Slug fixes that. When you save a post, the title is sent to an AI model that returns a concise 3-6 word English slug capturing the meaning of the title, the way a human editor would write it. Place names, brand names and intent are all translated correctly, unlike romanization plugins that transliterate character by character.
 
-* 生成失败自动回退 WordPress 默认行为,绝不阻塞发文
-* 纯英文标题、手工指定过 slug、已发布的旧文,一概不动
-* 自动保存不触发、低权限用户不触发、全站每小时限额
-* 站点背景/品牌词表可定制,模型可任选
-* 支持任何 OpenAI 兼容接口(默认硅基流动)
+Example results:
 
-= 使用前提 =
+* A Chinese review of a San Jose VPS becomes `sparta-vps-san-jose-network-speed-test`
+* A Chinese guide to appealing a banned ChatGPT account becomes `chatgpt-account-ban-appeal-guide`
 
-需要一个 OpenAI 兼容服务的 API Key(如硅基流动;通过邀请链接注册双方都会获得赠送额度,赠送额度足够本插件长期使用)。文章标题会发送到你配置的 API 服务商用于生成 slug,不涉及正文和其他数据。
+= Features =
+
+* Falls back to the WordPress default silently if generation fails, so publishing is never blocked
+* Skips titles already in English, slugs you set by hand, and already-published posts
+* Does not run on autosave, does not run for low-privilege users, and enforces an hourly site-wide cap
+* Optional site context field teaches the model your niche and brand names
+* Works with any OpenAI-compatible chat completion endpoint
+
+= External service =
+
+This plugin requires an API key for an OpenAI-compatible AI service. By default it calls SiliconFlow (https://siliconflow.cn), and you may point it at any other compatible provider in the settings.
+
+What is sent, and when: only the post title is transmitted, and only when you save a post whose title contains non-ASCII characters and has no usable slug yet. Post content, user data and site data are never sent.
+
+SiliconFlow terms of service: https://docs.siliconflow.cn/en/legals/terms-of-service
+SiliconFlow privacy policy: https://docs.siliconflow.cn/en/legals/privacy-policy
+
+The author's SiliconFlow referral link is shown on the settings screen. Signing up through it grants bonus credits to both the new user and the author. Using it is entirely optional: an API key from any compatible provider works the same way.
 
 == Installation ==
 
-1. 上传插件并启用
-2. 在 设置 → AI Slug 填入 API Key,点"测试连接"
-3. 发布中文标题的文章即可看到自动生成的英文 slug
+1. Upload the plugin and activate it.
+2. Go to Settings > AI Slug and enter your API key.
+3. Click "Test connection" to verify.
+4. Publish a post with a non-English title and the slug is generated automatically.
 
 == Frequently Asked Questions ==
 
-= 费用多少? =
+= How much does it cost? =
 
-默认模型每个 slug 约 100 token,折合不到 0.001 元人民币。
+Each slug uses roughly 100 tokens with the default model, which costs a fraction of a cent. Free signup credits typically last for years of normal blogging.
 
-= 旧文章的链接会变吗? =
+= Will the links of my existing posts change? =
 
-不会。已发布文章的 slug 永远不动。
+No. Slugs of already-published posts are never modified. Only new posts and drafts get a generated slug.
+
+= Can I use a provider other than the default? =
+
+Yes. Any OpenAI-compatible /v1/chat/completions endpoint works. Change the API base URL and model ID in the settings. Only HTTPS endpoints are accepted.
+
+= Does it work with the REST API and automated publishing? =
+
+Yes. Programmatic publishing goes through the same filter. If your request explicitly supplies a slug, that value is respected.
 
 == Changelog ==
 
 = 1.0.0 =
-* 首个公开版本:AI 生成 slug、失败回退与退避、防滥用限额、站点背景定制、测试连接
+* Initial public release: AI slug generation, silent fallback and back-off, abuse limits, site context option, connection test.
