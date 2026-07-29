@@ -8,8 +8,8 @@
  * Requires PHP: 7.4
  * Author: 静水流深 (adsorgcn)
  * Author URI: https://github.com/adsorgcn
- * License: GPLv2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * License: MIT
+ * License URI: https://opensource.org/licenses/MIT
  * Text Domain: ai-slug
  */
 

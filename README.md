@@ -1,6 +1,6 @@
 # AI Slug — 中文标题智能英文链接
 
-[![License: GPL v2](https://img.shields.io/badge/License-GPLv2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759b.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4.svg)](https://php.net/)
 
@@ -65,7 +65,7 @@ add_filter( 'aislug_post_types', fn( $types ) => array_merge( $types, array( 'pr
 
 ## License
 
-GPLv2 or later。欢迎 PR。
+MIT。欢迎 PR。
 
 ---
 

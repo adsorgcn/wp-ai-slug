@@ -5,8 +5,8 @@ Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 1.0.0
-License: GPLv2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+License: MIT
+License URI: https://opensource.org/licenses/MIT
 
 发文时用 AI 自动把中文标题翻译成精炼的英文 URL slug,告别百分号乱码和生硬拼音。
 
