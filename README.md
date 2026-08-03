@@ -1,4 +1,4 @@
-# Eastsoft Readable Slugs — 中文标题智能英文链接
+# iLang Readable Slugs — 中文标题智能英文链接
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759b.svg)](https://wordpress.org/)
