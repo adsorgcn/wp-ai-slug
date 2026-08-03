@@ -1,5 +1,5 @@
-=== AI Slug ===
-Contributors: adsorgcn
+=== Eastsoft Readable Slugs ===
+Contributors: eastsoft
 Tags: slug, permalink, seo, translation, ai
 Requires at least: 6.0
 Tested up to: 7.0
@@ -14,7 +14,7 @@ Automatically turn non-English post titles into clean, readable English URL slug
 
 When a post title is written in Chinese, Japanese, Korean, Arabic, Russian or any other non-Latin script, WordPress falls back to percent-encoded slugs such as `%e6%96%af%e5%b7%b4...`. Those URLs are unreadable, hard to share, and carry no SEO value.
 
-AI Slug fixes that. When you save a post, the title is sent to an AI model that returns a concise 3-6 word English slug capturing the meaning of the title, the way a human editor would write it. Place names, brand names and intent are all translated correctly, unlike romanization plugins that transliterate character by character.
+Eastsoft Readable Slugs fixes that. When you save a post, the title is sent to an AI model that returns a concise 3-6 word English slug capturing the meaning of the title, the way a human editor would write it. Place names, brand names and intent are all translated correctly, unlike romanization plugins that transliterate character by character.
 
 Example results:
 
@@ -43,7 +43,7 @@ The author's SiliconFlow referral link is shown on the settings screen. Signing 
 == Installation ==
 
 1. Upload the plugin and activate it.
-2. Go to Settings > AI Slug and enter your API key.
+2. Go to Settings > Readable Slugs and enter your API key.
 3. Click "Test connection" to verify.
 4. Publish a post with a non-English title and the slug is generated automatically.
 

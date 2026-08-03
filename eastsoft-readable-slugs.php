@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: AI Slug
+ * Plugin Name: Eastsoft Readable Slugs
  * Plugin URI: https://github.com/adsorgcn/wp-ai-slug
  * Description: Automatically turn non-English post titles into clean, readable English URL slugs using AI. Falls back to the WordPress default if generation fails, so publishing is never blocked. Works with any OpenAI-compatible endpoint.
  * Version: 1.0.0
@@ -10,7 +10,7 @@
  * Author URI: https://github.com/adsorgcn
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
- * Text Domain: ai-slug
+ * Text Domain: eastsoft-readable-slugs
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -209,7 +209,7 @@ class AISlug_Plugin {
 	// ------------------------------------------------------------------ 设置页
 
 	public static function menu() {
-		add_options_page( 'AI Slug 设置', 'AI Slug', self::CAP, 'ai-slug', array( __CLASS__, 'render' ) );
+		add_options_page( 'Eastsoft Readable Slugs 设置', 'Readable Slugs', self::CAP, 'eastsoft-readable-slugs', array( __CLASS__, 'render' ) );
 	}
 
 	public static function handle_save() {
@@ -246,7 +246,7 @@ class AISlug_Plugin {
 		);
 		update_option( self::OPTION, $new, false );
 		delete_transient( self::OPTION . '_backoff' ); // 改完配置立即重试
-		wp_safe_redirect( add_query_arg( 'saved', 1, admin_url( 'options-general.php?page=ai-slug' ) ) );
+		wp_safe_redirect( add_query_arg( 'saved', 1, admin_url( 'options-general.php?page=eastsoft-readable-slugs' ) ) );
 		exit;
 	}
 
@@ -259,7 +259,7 @@ class AISlug_Plugin {
 		$q      = is_wp_error( $result )
 			? array( 'test_error' => rawurlencode( $result->get_error_message() ) )
 			: array( 'test_ok' => rawurlencode( $result ) );
-		wp_safe_redirect( add_query_arg( $q, admin_url( 'options-general.php?page=ai-slug' ) ) );
+		wp_safe_redirect( add_query_arg( $q, admin_url( 'options-general.php?page=eastsoft-readable-slugs' ) ) );
 		exit;
 	}
 
@@ -280,7 +280,7 @@ class AISlug_Plugin {
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		?>
 		<div class="wrap">
-			<h1>AI Slug 设置</h1>
+			<h1>Eastsoft Readable Slugs 设置</h1>
 			<p class="description">发文时自动把中文标题生成英文 URL slug。纯英文标题、已手工指定 slug、已发布的旧文都不会触发;生成失败自动回退默认行为并退避 10 分钟,不影响发布。</p>
 
 			<?php if ( $notice_saved ) : ?>
