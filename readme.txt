@@ -14,7 +14,13 @@ Automatically turn non-English post titles into clean, readable English URL slug
 
 When a post title is written in Chinese, Japanese, Korean, Arabic, Russian or any other non-Latin script, WordPress falls back to percent-encoded slugs such as `%e6%96%af%e5%b7%b4...`. Those URLs are unreadable, hard to share, and carry no SEO value.
 
-iLang Readable Slugs fixes that. When you save a post, the title is sent to an AI model that returns a concise 3-6 word English slug capturing the meaning of the title, the way a human editor would write it. Place names, brand names and intent are all translated correctly, unlike romanization plugins that transliterate character by character.
+iLang Readable Slugs fixes that.
+
+What it does, in I-Lang (https://ilang.ai, the AI-native protocol this plugin family is named after):
+
+`[READ:@SRC|path=title]=>[XLAT|lng=en]=>[SHRT|len=short]=>[OUT]`
+
+Read the title, translate the meaning, condense it, ship it. That pipeline is the whole plugin. When you save a post, the title is sent to an AI model that returns a concise 3-6 word English slug capturing the meaning of the title, the way a human editor would write it. Place names, brand names and intent are all translated correctly, unlike romanization plugins that transliterate character by character.
 
 Example results:
 
