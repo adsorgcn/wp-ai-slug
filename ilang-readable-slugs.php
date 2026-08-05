@@ -3,7 +3,7 @@
  * Plugin Name: iLang Readable Slugs
  * Plugin URI: https://github.com/adsorgcn/wp-ai-slug
  * Description: Automatically turn non-English post titles into clean, readable English URL slugs using AI. Falls back to the WordPress default if generation fails, so publishing is never blocked. Works with any OpenAI-compatible endpoint.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: 静水流深 (adsorgcn)
@@ -11,6 +11,7 @@
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
  * Text Domain: ilang-readable-slugs
+ * Domain Path: /languages
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -19,13 +20,18 @@ class AISlug_Plugin {
 
 	const OPTION = 'aislug';
 	const CAP    = 'manage_options';
+	const PAGE   = 'ilang-readable-slugs';
 
-	/** 推荐模型(在硅基流动上实测过 slug 质量与延迟) */
+	/**
+	 * 预置模型:在 SiliconFlow 上实测过 slug 质量与延迟。
+	 * 键是要发给接口的 model id,值是给人看的说明 —— 用户在下拉里看到的是后者,
+	 * 永远不需要知道 model id 长什么样。
+	 */
 	public static function models() {
 		return array(
-			'Qwen/Qwen3.5-9B'               => 'Qwen3.5-9B(实测最快最准,推荐)',
-			'deepseek-ai/DeepSeek-V4-Flash' => 'DeepSeek-V4-Flash(备选)',
-			'Qwen/Qwen3.5-27B'              => 'Qwen3.5-27B(更大杯)',
+			'Qwen/Qwen3.5-9B'               => __( 'Qwen3.5-9B — fastest and most accurate in testing (recommended)', 'ilang-readable-slugs' ),
+			'deepseek-ai/DeepSeek-V4-Flash' => __( 'DeepSeek-V4-Flash — alternative', 'ilang-readable-slugs' ),
+			'Qwen/Qwen3.5-27B'              => __( 'Qwen3.5-27B — larger, slower', 'ilang-readable-slugs' ),
 		);
 	}
 
@@ -42,29 +48,41 @@ class AISlug_Plugin {
 	}
 
 	public static function init() {
-		self::maybe_migrate();
 		add_filter( 'wp_insert_post_data', array( __CLASS__, 'maybe_generate_slug' ), 9, 2 );
+		add_action( 'init', array( __CLASS__, 'load_textdomain' ) );
 		if ( is_admin() ) {
 			add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 			add_action( 'admin_post_aislug_save', array( __CLASS__, 'handle_save' ) );
 			add_action( 'admin_post_aislug_test', array( __CLASS__, 'handle_test' ) );
+			// 装完插件眼睛就在这一行 —— 设置入口必须在这里,而不是让人去"设置"菜单里翻
+			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'action_links' ) );
 		}
 	}
 
-	/** 从早期内部版(jiami_ai_slug)平滑迁移配置 */
-	private static function maybe_migrate() {
-		if ( false === get_option( self::OPTION ) ) {
-			$legacy = get_option( 'jiami_ai_slug' );
-			if ( is_array( $legacy ) ) {
-				add_option( self::OPTION, $legacy, '', false );
-			}
-		}
+	public static function load_textdomain() {
+		load_plugin_textdomain( 'ilang-readable-slugs', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	}
+
+	/** 插件列表那一行的"设置"链接;没配 key 时改叫"开始设置",把下一步说出来 */
+	public static function action_links( $links ) {
+		$configured = '' !== trim( (string) self::opts()['api_key'] );
+		$label      = $configured
+			? __( 'Settings', 'ilang-readable-slugs' )
+			: __( 'Set up', 'ilang-readable-slugs' );
+		$link = sprintf(
+			'<a href="%s"%s>%s</a>',
+			esc_url( admin_url( 'options-general.php?page=' . self::PAGE ) ),
+			$configured ? '' : ' style="font-weight:600"',
+			esc_html( $label )
+		);
+		array_unshift( $links, $link );
+		return $links;
 	}
 
 	// ------------------------------------------------------------------ 核心
 
 	/**
-	 * 保存文章时:标题含中文且没有可用的 ASCII slug 时,调 AI 生成。
+	 * 保存文章时:标题含非 ASCII 字符且没有可用的 ASCII slug 时,调 AI 生成。
 	 * 任何失败都原样返回 $data —— WordPress 默认行为兜底,绝不阻塞发布。
 	 *
 	 * 内置防护:自动保存不触发;失败进入 10 分钟退避;需 publish_posts
@@ -136,18 +154,23 @@ class AISlug_Plugin {
 	}
 
 	/**
-	 * 调 OpenAI 兼容接口(默认硅基流动)生成 slug。
+	 * 调 OpenAI 兼容接口(默认 SiliconFlow)生成 slug。
+	 *
+	 * 提示词刻意写成**语言中立**:本插件对任何非英文标题都成立(日文、俄文、
+	 * 阿拉伯文…),写死"中文标题"会让模型在其他语言上表现打折。
+	 *
 	 * @return string|WP_Error
 	 */
 	public static function generate( $title, $opts = null ) {
 		$opts = $opts ? $opts : self::opts();
 
-		$system = '你是博客URL slug生成器。给定中文文章标题,只输出一个英文slug:'
-			. '全小写,连字符分隔,3-6个英文单词,概括主题,利于SEO。'
-			. '品牌名/专有名词保留其英文原拼写。'
-			. '只输出slug本身,不要任何解释、引号或其他文字。';
+		$system = 'You generate URL slugs for blog posts. Given a post title in any language, '
+			. 'output one English slug: all lowercase, hyphen-separated, 3-6 English words '
+			. 'that capture the topic and read well in a URL. '
+			. 'Keep brand names and proper nouns in their official English spelling. '
+			. 'Output the slug itself only — no explanation, quotes or any other text.';
 		if ( '' !== trim( (string) $opts['site_context'] ) ) {
-			$system .= "\n站点背景(供理解标题用):" . trim( $opts['site_context'] );
+			$system .= "\nSite context (to help you read the title): " . trim( $opts['site_context'] );
 		}
 
 		$body = array(
@@ -174,22 +197,25 @@ class AISlug_Plugin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return new WP_Error( 'http_error', 'API 请求失败: ' . $response->get_error_message() );
+			/* translators: %s: error message from the HTTP layer */
+			return new WP_Error( 'http_error', sprintf( __( 'Request failed: %s', 'ilang-readable-slugs' ), $response->get_error_message() ) );
 		}
 		$code = wp_remote_retrieve_response_code( $response );
 		$json = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( 200 !== $code ) {
 			$msg = isset( $json['message'] ) ? $json['message'] : ( isset( $json['error']['message'] ) ? $json['error']['message'] : 'HTTP ' . $code );
-			return new WP_Error( 'api_error', 'API 返回错误: ' . $msg );
+			/* translators: %s: error message returned by the AI provider */
+			return new WP_Error( 'api_error', sprintf( __( 'The provider returned an error: %s', 'ilang-readable-slugs' ), $msg ) );
 		}
 
 		$choice = isset( $json['choices'][0] ) ? $json['choices'][0] : array();
 		$text   = isset( $choice['message']['content'] ) ? trim( (string) $choice['message']['content'] ) : '';
 		if ( '' === $text ) {
-			return new WP_Error( 'empty', 'API 未返回内容' );
+			return new WP_Error( 'empty', __( 'The provider returned no content.', 'ilang-readable-slugs' ) );
 		}
 		if ( isset( $choice['finish_reason'] ) && 'length' === $choice['finish_reason'] ) {
-			return new WP_Error( 'truncated', '输出被 max_tokens 截断: ' . $text );
+			/* translators: %s: the truncated model output */
+			return new WP_Error( 'truncated', sprintf( __( 'Output was cut off by max_tokens: %s', 'ilang-readable-slugs' ), $text ) );
 		}
 
 		// 容错:有的模型会包引号/代码块/多行,取第一行并剥壳
@@ -201,7 +227,8 @@ class AISlug_Plugin {
 			$slug = trim( substr( $slug, 0, 80 ), '-' );
 		}
 		if ( '' === $slug || ! preg_match( '/^[a-z0-9][a-z0-9-]*$/', $slug ) ) {
-			return new WP_Error( 'bad_slug', 'AI 返回的 slug 不合规: ' . $text );
+			/* translators: %s: the unusable text the model returned */
+			return new WP_Error( 'bad_slug', sprintf( __( 'The model returned something unusable as a slug: %s', 'ilang-readable-slugs' ), $text ) );
 		}
 		return $slug;
 	}
@@ -209,12 +236,18 @@ class AISlug_Plugin {
 	// ------------------------------------------------------------------ 设置页
 
 	public static function menu() {
-		add_options_page( 'iLang Readable Slugs 设置', 'Readable Slugs', self::CAP, 'ilang-readable-slugs', array( __CLASS__, 'render' ) );
+		add_options_page(
+			__( 'iLang Readable Slugs', 'ilang-readable-slugs' ),
+			__( 'Readable Slugs', 'ilang-readable-slugs' ),
+			self::CAP,
+			self::PAGE,
+			array( __CLASS__, 'render' )
+		);
 	}
 
 	public static function handle_save() {
 		if ( ! current_user_can( self::CAP ) ) {
-			wp_die( '权限不足' );
+			wp_die( esc_html__( 'Insufficient permissions.', 'ilang-readable-slugs' ) );
 		}
 		check_admin_referer( 'aislug_save' );
 		$old = self::opts();
@@ -225,10 +258,19 @@ class AISlug_Plugin {
 			$base = 'https://api.siliconflow.cn'; // 密钥走请求头,只允许 https
 		}
 
-		$model_in = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
-		$model    = trim( $model_in );
+		/*
+		 * 模型:下拉选预置项,或选"自定义"后填 model id。
+		 * 下拉给的是可读名称,自己填的才是 id —— 小白全程不需要知道 id 存在。
+		 */
+		$picked = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
+		if ( '__custom__' === $picked ) {
+			$custom = isset( $_POST['model_custom'] ) ? sanitize_text_field( wp_unslash( $_POST['model_custom'] ) ) : '';
+			$model  = trim( $custom );
+		} else {
+			$model = trim( $picked );
+		}
 		if ( '' === $model || ! preg_match( '#^[\w.\-]+(/[\w.\-]+)*$#', $model ) ) {
-			$model = $old['model'];
+			$model = $old['model']; // 空或不像 model id:保持原值,不让错值把功能弄哑
 		}
 
 		$context = isset( $_POST['site_context'] ) ? sanitize_textarea_field( wp_unslash( $_POST['site_context'] ) ) : $old['site_context'];
@@ -246,31 +288,50 @@ class AISlug_Plugin {
 		);
 		update_option( self::OPTION, $new, false );
 		delete_transient( self::OPTION . '_backoff' ); // 改完配置立即重试
-		wp_safe_redirect( add_query_arg( 'saved', 1, admin_url( 'options-general.php?page=ilang-readable-slugs' ) ) );
+		wp_safe_redirect( add_query_arg( 'saved', 1, admin_url( 'options-general.php?page=' . self::PAGE ) ) );
 		exit;
 	}
 
 	public static function handle_test() {
 		if ( ! current_user_can( self::CAP ) ) {
-			wp_die( '权限不足' );
+			wp_die( esc_html__( 'Insufficient permissions.', 'ilang-readable-slugs' ) );
 		}
 		check_admin_referer( 'aislug_test' );
-		$result = self::generate( '春节回家高铁抢票的十个实用技巧' );
+		$sample = self::sample_title();
+		$result = self::generate( $sample );
 		$q      = is_wp_error( $result )
 			? array( 'test_error' => rawurlencode( $result->get_error_message() ) )
 			: array( 'test_ok' => rawurlencode( $result ) );
-		wp_safe_redirect( add_query_arg( $q, admin_url( 'options-general.php?page=ilang-readable-slugs' ) ) );
+		wp_safe_redirect( add_query_arg( $q, admin_url( 'options-general.php?page=' . self::PAGE ) ) );
 		exit;
+	}
+
+	/**
+	 * "测试连接"用的样例标题。用站点自己的语言更有说服力 ——
+	 * 中文站看到中文标题变成英文 slug,一眼就明白这插件干什么。
+	 */
+	private static function sample_title() {
+		$samples = array(
+			'zh' => '春节回家高铁抢票的十个实用技巧',
+			'ja' => '新幹線のチケットを安く買う十の方法',
+			'ko' => '설 연휴 기차표 예매하는 열 가지 방법',
+			'ru' => 'Десять способов купить билеты на поезд дешевле',
+			'ar' => 'عشر طرق لحجز تذاكر القطار بسعر أقل',
+		);
+		$short = strtolower( substr( get_locale(), 0, 2 ) );
+		return isset( $samples[ $short ] ) ? $samples[ $short ] : '春节回家高铁抢票的十个实用技巧';
 	}
 
 	public static function render() {
 		if ( ! current_user_can( self::CAP ) ) {
-			wp_die( '权限不足' );
+			wp_die( esc_html__( 'Insufficient permissions.', 'ilang-readable-slugs' ) );
 		}
 		$opts       = self::opts();
+		$configured = '' !== trim( (string) $opts['api_key'] );
 		$last_error = get_option( self::OPTION . '_last_error' );
 		$in_backoff = (bool) get_transient( self::OPTION . '_backoff' );
-		$is_preset  = array_key_exists( $opts['model'], self::models() );
+		$presets    = self::models();
+		$is_preset  = array_key_exists( $opts['model'], $presets );
 
 		// 以下三个查询参数只是本插件自身 redirect 回来的状态提示,不改变任何数据,故不需要 nonce。
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
@@ -278,64 +339,150 @@ class AISlug_Plugin {
 		$notice_ok    = isset( $_GET['test_ok'] ) ? rawurldecode( sanitize_text_field( wp_unslash( $_GET['test_ok'] ) ) ) : '';
 		$notice_err   = isset( $_GET['test_error'] ) ? rawurldecode( sanitize_text_field( wp_unslash( $_GET['test_error'] ) ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		// 选"自定义"时才展开 model id 输入框。注册一个空句柄挂内联脚本,
+		// 比在页面里裸写 <script> 干净,也过得了官方 Plugin Check。
+		wp_register_script( 'aislug-admin', false, array(), '1.1.0', true );
+		wp_enqueue_script( 'aislug-admin' );
+		wp_add_inline_script(
+			'aislug-admin',
+			'document.addEventListener("DOMContentLoaded",function(){'
+			. 'var s=document.getElementById("aislug-model"),c=document.getElementById("aislug-model-custom");'
+			. 'if(!s||!c){return;}'
+			. 'function t(){c.style.display=(s.value==="__custom__")?"":"none";if(s.value==="__custom__"){c.focus();}}'
+			. 's.addEventListener("change",t);t();});'
+		);
 		?>
 		<div class="wrap">
-			<h1>iLang Readable Slugs 设置</h1>
-			<p class="description">发文时自动把中文标题生成英文 URL slug。纯英文标题、已手工指定 slug、已发布的旧文都不会触发;生成失败自动回退默认行为并退避 10 分钟,不影响发布。</p>
+			<h1><?php esc_html_e( 'iLang Readable Slugs', 'ilang-readable-slugs' ); ?></h1>
 
 			<?php if ( $notice_saved ) : ?>
-				<div class="notice notice-success"><p>已保存。</p></div>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'ilang-readable-slugs' ); ?></p></div>
 			<?php endif; ?>
 			<?php if ( '' !== $notice_ok ) : ?>
-				<div class="notice notice-success"><p>连接正常!测试标题"春节回家高铁抢票的十个实用技巧" → <code><?php echo esc_html( $notice_ok ); ?></code></p></div>
+				<div class="notice notice-success">
+					<p>
+						<?php
+						printf(
+							/* translators: 1: sample post title, 2: generated slug */
+							esc_html__( 'Connection works. Sample title %1$s became %2$s', 'ilang-readable-slugs' ),
+							'<em>' . esc_html( self::sample_title() ) . '</em>',
+							'<code>' . esc_html( $notice_ok ) . '</code>'
+						);
+						?>
+					</p>
+				</div>
 			<?php endif; ?>
 			<?php if ( '' !== $notice_err ) : ?>
-				<div class="notice notice-error"><p>测试失败:<?php echo esc_html( $notice_err ); ?></p></div>
+				<div class="notice notice-error"><p><?php echo esc_html( $notice_err ); ?></p></div>
 			<?php endif; ?>
 			<?php if ( $in_backoff ) : ?>
-				<div class="notice notice-warning"><p>最近一次生成失败,当前处于退避期(最长 10 分钟)。保存设置可立即解除。</p></div>
+				<div class="notice notice-warning"><p><?php esc_html_e( 'The last attempt failed, so generation is paused for up to 10 minutes. Saving settings resumes it immediately.', 'ilang-readable-slugs' ); ?></p></div>
+			<?php endif; ?>
+
+			<?php if ( ! $configured ) : ?>
+				<?php // 首次进来的空状态:只讲"下一步做什么",不堆功能说明 ?>
+				<div class="notice notice-info" style="padding:12px 16px">
+					<h2 style="margin-top:0"><?php esc_html_e( 'One step to get started', 'ilang-readable-slugs' ); ?></h2>
+					<p style="max-width:46em">
+						<?php
+						printf(
+							/* translators: %s: link to sign up with the default provider */
+							esc_html__( 'Paste an API key below and save. Any OpenAI-compatible provider works — if you do not have one yet, %s. The free credit alone covers a long time of normal use (well under a cent per slug).', 'ilang-readable-slugs' ),
+							'<a href="https://cloud.siliconflow.cn/i/tJXyk0DQ" target="_blank" rel="noopener">' . esc_html__( 'sign up at SiliconFlow', 'ilang-readable-slugs' ) . '</a>'
+						);
+						?>
+					</p>
+					<p class="description"><?php esc_html_e( 'That link is the author\'s referral link: signing up through it gives bonus credit to both you and this project. A key from anywhere else works exactly the same.', 'ilang-readable-slugs' ); ?></p>
+				</div>
+			<?php else : ?>
+				<p class="description" style="max-width:52em">
+					<?php esc_html_e( 'Post titles that are not written in English get a readable English slug when you save them. Titles already in English, slugs you typed yourself, and already-published posts are never touched. If generation fails, WordPress just does what it normally would — publishing is never blocked.', 'ilang-readable-slugs' ); ?>
+				</p>
 			<?php endif; ?>
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'aislug_save' ); ?>
 				<input type="hidden" name="action" value="aislug_save">
 				<table class="form-table" role="presentation">
-					<tr><th>启用</th><td><label><input type="checkbox" name="enabled" value="1" <?php checked( $opts['enabled'] ); ?>> 自动生成 slug</label></td></tr>
-					<tr><th>API Key</th><td>
-						<input type="password" name="api_key" class="regular-text" autocomplete="new-password"
-							placeholder="<?php echo $opts['api_key'] ? '已配置(留空保持不变)' : 'sk-...'; ?>">
-						<p class="description">硅基流动或其他 OpenAI 兼容服务的 API Key。还没有账号?<a href="https://cloud.siliconflow.cn/i/tJXyk0DQ" target="_blank" rel="noopener">用邀请链接注册</a>,双方都会获得赠送额度,而且赠送额度就足够本插件长期使用(每个 slug 不到 0.001 元)。留空表示保持现有密钥不变。</p>
-					</td></tr>
-					<tr><th>API 地址</th><td>
-						<input type="url" name="api_base" class="regular-text" value="<?php echo esc_attr( $opts['api_base'] ); ?>">
-						<p class="description">OpenAI 兼容接口地址,仅限 https。默认硅基流动。</p>
-					</td></tr>
-					<tr><th>模型</th><td>
-						<input name="model" class="regular-text" list="aislug-models" value="<?php echo esc_attr( $opts['model'] ); ?>">
-						<datalist id="aislug-models">
-							<?php foreach ( self::models() as $id => $label ) : ?>
-								<option value="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></option>
-							<?php endforeach; ?>
-						</datalist>
-						<p class="description">默认 Qwen3.5-9B(实测最快最准);也可手填任意兼容模型 ID。<?php echo $is_preset ? '' : '当前为自定义模型。'; ?></p>
-					</td></tr>
-					<tr><th>站点背景(可选)</th><td>
-						<textarea name="site_context" class="large-text" rows="3" placeholder="例:数码评测博客;常见品牌:xiaomi、huawei、dji(帮助 AI 理解标题里的专有名词并保留正确拼写)"><?php echo esc_textarea( $opts['site_context'] ); ?></textarea>
-						<p class="description">描述站点主题和常见品牌词,可显著提升专有名词的翻译准确度。</p>
-					</td></tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'API key', 'ilang-readable-slugs' ); ?></th>
+						<td>
+							<input type="password" name="api_key" class="regular-text" autocomplete="new-password"
+								placeholder="<?php echo esc_attr( $configured ? __( 'Saved — leave blank to keep', 'ilang-readable-slugs' ) : 'sk-...' ); ?>">
+							<?php if ( $configured ) : ?>
+								<p class="description"><?php esc_html_e( 'Leave blank to keep the key you already saved.', 'ilang-readable-slugs' ); ?></p>
+							<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="aislug-model"><?php esc_html_e( 'Model', 'ilang-readable-slugs' ); ?></label></th>
+						<td>
+							<select id="aislug-model" name="model">
+								<?php foreach ( $presets as $id => $label ) : ?>
+									<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $is_preset && $opts['model'] === $id ); ?>>
+										<?php echo esc_html( $label ); ?>
+									</option>
+								<?php endforeach; ?>
+								<option value="__custom__" <?php selected( ! $is_preset ); ?>><?php esc_html_e( 'Custom model ID…', 'ilang-readable-slugs' ); ?></option>
+							</select>
+							<input type="text" id="aislug-model-custom" name="model_custom" class="regular-text"
+								style="display:none;margin-left:8px" placeholder="provider/model-name"
+								value="<?php echo esc_attr( $is_preset ? '' : $opts['model'] ); ?>">
+							<p class="description"><?php esc_html_e( 'The default is a good choice for this job. Pick "Custom model ID" only if you know which model you want.', 'ilang-readable-slugs' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="aislug-context"><?php esc_html_e( 'Site context', 'ilang-readable-slugs' ); ?></label>
+							<span class="description" style="font-weight:400"><?php esc_html_e( '(optional)', 'ilang-readable-slugs' ); ?></span></th>
+						<td>
+							<textarea id="aislug-context" name="site_context" class="large-text" rows="2"
+								placeholder="<?php esc_attr_e( 'e.g. Camera review blog; brands that come up often: canon, sony, dji', 'ilang-readable-slugs' ); ?>"><?php echo esc_textarea( $opts['site_context'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Naming your topic and the brands you write about noticeably improves how proper nouns are spelled in slugs.', 'ilang-readable-slugs' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Generation', 'ilang-readable-slugs' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="enabled" value="1" <?php checked( $opts['enabled'] ); ?>>
+								<?php esc_html_e( 'Generate slugs automatically when a post is saved', 'ilang-readable-slugs' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Advanced', 'ilang-readable-slugs' ); ?></th>
+						<td>
+							<details>
+								<summary style="cursor:pointer"><?php esc_html_e( 'Use a different provider', 'ilang-readable-slugs' ); ?></summary>
+								<p style="margin-top:10px">
+									<label for="aislug-base"><?php esc_html_e( 'API base URL', 'ilang-readable-slugs' ); ?></label><br>
+									<input type="url" id="aislug-base" name="api_base" class="regular-text" value="<?php echo esc_attr( $opts['api_base'] ); ?>">
+								</p>
+								<p class="description"><?php esc_html_e( 'Any OpenAI-compatible endpoint. HTTPS only. Leave this alone unless you are switching providers.', 'ilang-readable-slugs' ); ?></p>
+							</details>
+						</td>
+					</tr>
 				</table>
-				<p><button class="button button-primary">保存设置</button></p>
+				<p>
+					<button class="button button-primary"><?php esc_html_e( 'Save settings', 'ilang-readable-slugs' ); ?></button>
+				</p>
 			</form>
 
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:4px">
 				<?php wp_nonce_field( 'aislug_test' ); ?>
 				<input type="hidden" name="action" value="aislug_test">
-				<button class="button" <?php disabled( '' === $opts['api_key'] ); ?>>测试连接</button>
-				<?php if ( '' === $opts['api_key'] ) : ?><span class="description" style="margin-left:8px">先保存 API Key</span><?php endif; ?>
+				<button class="button" <?php disabled( ! $configured ); ?>><?php esc_html_e( 'Test connection', 'ilang-readable-slugs' ); ?></button>
+				<?php if ( ! $configured ) : ?>
+					<span class="description" style="margin-left:8px"><?php esc_html_e( 'Save an API key first.', 'ilang-readable-slugs' ); ?></span>
+				<?php endif; ?>
 			</form>
 
 			<?php if ( $last_error ) : ?>
-				<p class="description" style="margin-top:16px">最近一次生成失败:<code><?php echo esc_html( $last_error ); ?></code></p>
+				<p class="description" style="margin-top:16px">
+					<?php esc_html_e( 'Last failure:', 'ilang-readable-slugs' ); ?>
+					<code><?php echo esc_html( $last_error ); ?></code>
+				</p>
 			<?php endif; ?>
 		</div>
 		<?php

@@ -4,7 +4,7 @@ Tags: slug, permalink, seo, translation, ai
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -72,6 +72,13 @@ Yes. Any OpenAI-compatible /v1/chat/completions endpoint works. Change the API b
 Yes. Programmatic publishing goes through the same filter. If your request explicitly supplies a slug, that value is respected.
 
 == Changelog ==
+
+= 1.1.0 =
+* Settings link now appears directly in the plugin list — no hunting through menus.
+* Model is a plain dropdown with a recommended default; the model ID field only appears if you ask for it.
+* The whole admin screen is now in English and translatable, with a Simplified Chinese translation included.
+* First run shows a single clear next step instead of a wall of options; provider URL moved under Advanced.
+* The prompt is language-neutral, so Japanese, Russian, Arabic and other titles are handled as well as Chinese.
 
 = 1.0.0 =
 * Initial public release: AI slug generation, silent fallback and back-off, abuse limits, site context option, connection test.
