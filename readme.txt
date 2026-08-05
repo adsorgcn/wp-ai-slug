@@ -4,7 +4,7 @@ Tags: slug, permalink, seo, translation, ai
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -72,6 +72,10 @@ Yes. Any OpenAI-compatible /v1/chat/completions endpoint works. Change the API b
 Yes. Programmatic publishing goes through the same filter. If your request explicitly supplies a slug, that value is respected.
 
 == Changelog ==
+
+= 1.1.1 =
+* Support and feedback links added to the plugin row and the settings screen; the issue link comes pre-filled with your plugin, WordPress and PHP versions so a report is useful the moment you send it.
+* When a generation has failed, the failure notice now offers that link directly.
 
 = 1.1.0 =
 * Settings link now appears directly in the plugin list — no hunting through menus.

@@ -2,22 +2,22 @@
 # This file is distributed under the MIT.
 msgid ""
 msgstr ""
-"Project-Id-Version: iLang Readable Slugs 1.1.0\n"
+"Project-Id-Version: iLang Readable Slugs 1.1.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ilspot\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-05T18:08:49+00:00\n"
+"POT-Creation-Date: 2026-08-05T23:01:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ilang-readable-slugs\n"
 
 #. Plugin Name of the plugin
 #: ilang-readable-slugs.php
-#: ilang-readable-slugs.php:240
-#: ilang-readable-slugs.php:357
+#: ilang-readable-slugs.php:286
+#: ilang-readable-slugs.php:403
 msgid "iLang Readable Slugs"
 msgstr ""
 
@@ -41,176 +41,202 @@ msgstr ""
 msgid "https://github.com/adsorgcn"
 msgstr ""
 
-#: ilang-readable-slugs.php:32
+#: ilang-readable-slugs.php:33
 msgid "Qwen3.5-9B — fastest and most accurate in testing (recommended)"
 msgstr ""
 
-#: ilang-readable-slugs.php:33
+#: ilang-readable-slugs.php:34
 msgid "DeepSeek-V4-Flash — alternative"
 msgstr ""
 
-#: ilang-readable-slugs.php:34
+#: ilang-readable-slugs.php:35
 msgid "Qwen3.5-27B — larger, slower"
 msgstr ""
 
-#: ilang-readable-slugs.php:70
+#: ilang-readable-slugs.php:77
+msgid "Support"
+msgstr ""
+
+#: ilang-readable-slugs.php:82
+msgid "Report an issue or suggest a feature"
+msgstr ""
+
+#: ilang-readable-slugs.php:116
 msgid "Settings"
 msgstr ""
 
-#: ilang-readable-slugs.php:71
+#: ilang-readable-slugs.php:117
 msgid "Set up"
 msgstr ""
 
 #. translators: %s: error message from the HTTP layer
-#: ilang-readable-slugs.php:201
+#: ilang-readable-slugs.php:247
 #, php-format
 msgid "Request failed: %s"
 msgstr ""
 
 #. translators: %s: error message returned by the AI provider
-#: ilang-readable-slugs.php:208
+#: ilang-readable-slugs.php:254
 #, php-format
 msgid "The provider returned an error: %s"
 msgstr ""
 
-#: ilang-readable-slugs.php:214
+#: ilang-readable-slugs.php:260
 msgid "The provider returned no content."
 msgstr ""
 
 #. translators: %s: the truncated model output
-#: ilang-readable-slugs.php:218
+#: ilang-readable-slugs.php:264
 #, php-format
 msgid "Output was cut off by max_tokens: %s"
 msgstr ""
 
 #. translators: %s: the unusable text the model returned
-#: ilang-readable-slugs.php:231
+#: ilang-readable-slugs.php:277
 #, php-format
 msgid "The model returned something unusable as a slug: %s"
 msgstr ""
 
-#: ilang-readable-slugs.php:241
+#: ilang-readable-slugs.php:287
 msgid "Readable Slugs"
 msgstr ""
 
-#: ilang-readable-slugs.php:250
-#: ilang-readable-slugs.php:297
-#: ilang-readable-slugs.php:327
+#: ilang-readable-slugs.php:296
+#: ilang-readable-slugs.php:343
+#: ilang-readable-slugs.php:373
 msgid "Insufficient permissions."
 msgstr ""
 
-#: ilang-readable-slugs.php:360
+#: ilang-readable-slugs.php:406
 msgid "Settings saved."
 msgstr ""
 
 #. translators: 1: sample post title, 2: generated slug
-#: ilang-readable-slugs.php:368
+#: ilang-readable-slugs.php:414
 #, php-format
 msgid "Connection works. Sample title %1$s became %2$s"
 msgstr ""
 
-#: ilang-readable-slugs.php:380
+#: ilang-readable-slugs.php:426
 msgid "The last attempt failed, so generation is paused for up to 10 minutes. Saving settings resumes it immediately."
 msgstr ""
 
-#: ilang-readable-slugs.php:386
+#: ilang-readable-slugs.php:432
 msgid "One step to get started"
 msgstr ""
 
 #. translators: %s: link to sign up with the default provider
-#: ilang-readable-slugs.php:391
+#: ilang-readable-slugs.php:437
 #, php-format
 msgid "Paste an API key below and save. Any OpenAI-compatible provider works — if you do not have one yet, %s. The free credit alone covers a long time of normal use (well under a cent per slug)."
 msgstr ""
 
-#: ilang-readable-slugs.php:392
+#: ilang-readable-slugs.php:438
 msgid "sign up at SiliconFlow"
 msgstr ""
 
-#: ilang-readable-slugs.php:396
+#: ilang-readable-slugs.php:442
 msgid "That link is the author's referral link: signing up through it gives bonus credit to both you and this project. A key from anywhere else works exactly the same."
 msgstr ""
 
-#: ilang-readable-slugs.php:400
+#: ilang-readable-slugs.php:446
 msgid "Post titles that are not written in English get a readable English slug when you save them. Titles already in English, slugs you typed yourself, and already-published posts are never touched. If generation fails, WordPress just does what it normally would — publishing is never blocked."
 msgstr ""
 
-#: ilang-readable-slugs.php:409
+#: ilang-readable-slugs.php:455
 msgid "API key"
 msgstr ""
 
-#: ilang-readable-slugs.php:412
+#: ilang-readable-slugs.php:458
 msgid "Saved — leave blank to keep"
 msgstr ""
 
-#: ilang-readable-slugs.php:414
+#: ilang-readable-slugs.php:460
 msgid "Leave blank to keep the key you already saved."
 msgstr ""
 
-#: ilang-readable-slugs.php:419
+#: ilang-readable-slugs.php:465
 msgid "Model"
 msgstr ""
 
-#: ilang-readable-slugs.php:427
+#: ilang-readable-slugs.php:473
 msgid "Custom model ID…"
 msgstr ""
 
-#: ilang-readable-slugs.php:432
+#: ilang-readable-slugs.php:478
 msgid "The default is a good choice for this job. Pick \"Custom model ID\" only if you know which model you want."
 msgstr ""
 
-#: ilang-readable-slugs.php:436
+#: ilang-readable-slugs.php:482
 msgid "Site context"
 msgstr ""
 
-#: ilang-readable-slugs.php:437
+#: ilang-readable-slugs.php:483
 msgid "(optional)"
 msgstr ""
 
-#: ilang-readable-slugs.php:440
+#: ilang-readable-slugs.php:486
 msgid "e.g. Camera review blog; brands that come up often: canon, sony, dji"
 msgstr ""
 
-#: ilang-readable-slugs.php:441
+#: ilang-readable-slugs.php:487
 msgid "Naming your topic and the brands you write about noticeably improves how proper nouns are spelled in slugs."
 msgstr ""
 
-#: ilang-readable-slugs.php:445
+#: ilang-readable-slugs.php:491
 msgid "Generation"
 msgstr ""
 
-#: ilang-readable-slugs.php:449
+#: ilang-readable-slugs.php:495
 msgid "Generate slugs automatically when a post is saved"
 msgstr ""
 
-#: ilang-readable-slugs.php:454
+#: ilang-readable-slugs.php:500
 msgid "Advanced"
 msgstr ""
 
-#: ilang-readable-slugs.php:457
+#: ilang-readable-slugs.php:503
 msgid "Use a different provider"
 msgstr ""
 
-#: ilang-readable-slugs.php:459
+#: ilang-readable-slugs.php:505
 msgid "API base URL"
 msgstr ""
 
-#: ilang-readable-slugs.php:462
+#: ilang-readable-slugs.php:508
 msgid "Any OpenAI-compatible endpoint. HTTPS only. Leave this alone unless you are switching providers."
 msgstr ""
 
-#: ilang-readable-slugs.php:468
+#: ilang-readable-slugs.php:514
 msgid "Save settings"
 msgstr ""
 
-#: ilang-readable-slugs.php:475
+#: ilang-readable-slugs.php:521
 msgid "Test connection"
 msgstr ""
 
-#: ilang-readable-slugs.php:477
+#: ilang-readable-slugs.php:523
 msgid "Save an API key first."
 msgstr ""
 
-#: ilang-readable-slugs.php:483
+#: ilang-readable-slugs.php:530
 msgid "Last failure:"
+msgstr ""
+
+#: ilang-readable-slugs.php:534
+msgid "Keeps happening? Tell us — the report is pre-filled with your versions."
+msgstr ""
+
+#. translators: 1: link to the support forum, 2: link to open a GitHub issue
+#: ilang-readable-slugs.php:544
+#, php-format
+msgid "Something not working, or an idea for it? Ask on the %1$s, or %2$s — both are read by the author."
+msgstr ""
+
+#: ilang-readable-slugs.php:545
+msgid "support forum"
+msgstr ""
+
+#: ilang-readable-slugs.php:546
+msgid "open an issue on GitHub"
 msgstr ""

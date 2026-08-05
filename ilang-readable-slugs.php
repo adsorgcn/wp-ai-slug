@@ -3,7 +3,7 @@
  * Plugin Name: iLang Readable Slugs
  * Plugin URI: https://github.com/adsorgcn/wp-ai-slug
  * Description: Automatically turn non-English post titles into clean, readable English URL slugs using AI. Falls back to the WordPress default if generation fails, so publishing is never blocked. Works with any OpenAI-compatible endpoint.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: 静水流深 (adsorgcn)
@@ -18,9 +18,10 @@ defined( 'ABSPATH' ) || exit;
 
 class AISlug_Plugin {
 
-	const OPTION = 'aislug';
-	const CAP    = 'manage_options';
-	const PAGE   = 'ilang-readable-slugs';
+	const OPTION  = 'aislug';
+	const CAP     = 'manage_options';
+	const PAGE    = 'ilang-readable-slugs';
+	const VERSION = '1.1.1';
 
 	/**
 	 * 预置模型:在 SiliconFlow 上实测过 slug 质量与延迟。
@@ -56,7 +57,52 @@ class AISlug_Plugin {
 			add_action( 'admin_post_aislug_test', array( __CLASS__, 'handle_test' ) );
 			// 装完插件眼睛就在这一行 —— 设置入口必须在这里,而不是让人去"设置"菜单里翻
 			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'action_links' ) );
+			add_filter( 'plugin_row_meta', array( __CLASS__, 'row_meta' ), 10, 2 );
 		}
+	}
+
+	/**
+	 * 插件行第二排的支持与反馈入口(WordPress 放"文档/支持"的标准位置)。
+	 *
+	 * 两个出口各有各的人群:普通用户习惯 wp.org 论坛,开发者习惯 GitHub。
+	 * 只放两条,不把这行变成广告位。
+	 */
+	public static function row_meta( $links, $file ) {
+		if ( plugin_basename( __FILE__ ) !== $file ) {
+			return $links;
+		}
+		$links[] = sprintf(
+			'<a href="%s" target="_blank" rel="noopener">%s</a>',
+			esc_url( 'https://wordpress.org/support/plugin/ilang-readable-slugs/' ),
+			esc_html__( 'Support', 'ilang-readable-slugs' )
+		);
+		$links[] = sprintf(
+			'<a href="%s" target="_blank" rel="noopener">%s</a>',
+			esc_url( self::issue_url() ),
+			esc_html__( 'Report an issue or suggest a feature', 'ilang-readable-slugs' )
+		);
+		return $links;
+	}
+
+	/**
+	 * GitHub 新建 issue 链接,**预填环境信息**。
+	 *
+	 * 收不到版本号的 bug 报告基本没法处理,而让用户自己去翻 WP 版本、PHP 版本
+	 * 是在为难他们 —— 那些信息我们本来就知道,替他们填好即可。
+	 * 只填版本类信息:站点地址、密钥、文章内容一概不带。
+	 */
+	private static function issue_url() {
+		$body = sprintf(
+			"\n\n---\nPlugin %s | WordPress %s | PHP %s | Locale %s",
+			self::VERSION,
+			get_bloginfo( 'version' ),
+			PHP_VERSION,
+			get_locale()
+		);
+		return add_query_arg(
+			array( 'body' => rawurlencode( $body ) ),
+			'https://github.com/adsorgcn/wp-ai-slug/issues/new'
+		);
 	}
 
 	public static function load_textdomain() {
@@ -342,7 +388,7 @@ class AISlug_Plugin {
 
 		// 选"自定义"时才展开 model id 输入框。注册一个空句柄挂内联脚本,
 		// 比在页面里裸写 <script> 干净,也过得了官方 Plugin Check。
-		wp_register_script( 'aislug-admin', false, array(), '1.1.0', true );
+		wp_register_script( 'aislug-admin', false, array(), self::VERSION, true );
 		wp_enqueue_script( 'aislug-admin' );
 		wp_add_inline_script(
 			'aislug-admin',
@@ -479,11 +525,28 @@ class AISlug_Plugin {
 			</form>
 
 			<?php if ( $last_error ) : ?>
+				<?php // 用户正受挫的这一刻,才是最该把反馈出口递到手边的时候 ?>
 				<p class="description" style="margin-top:16px">
 					<?php esc_html_e( 'Last failure:', 'ilang-readable-slugs' ); ?>
 					<code><?php echo esc_html( $last_error ); ?></code>
+					<br>
+					<a href="<?php echo esc_url( self::issue_url() ); ?>" target="_blank" rel="noopener">
+						<?php esc_html_e( 'Keeps happening? Tell us — the report is pre-filled with your versions.', 'ilang-readable-slugs' ); ?>
+					</a>
 				</p>
 			<?php endif; ?>
+
+			<hr style="margin-top:28px">
+			<p class="description">
+				<?php
+				printf(
+					/* translators: 1: link to the support forum, 2: link to open a GitHub issue */
+					esc_html__( 'Something not working, or an idea for it? Ask on the %1$s, or %2$s — both are read by the author.', 'ilang-readable-slugs' ),
+					'<a href="https://wordpress.org/support/plugin/ilang-readable-slugs/" target="_blank" rel="noopener">' . esc_html__( 'support forum', 'ilang-readable-slugs' ) . '</a>',
+					'<a href="' . esc_url( self::issue_url() ) . '" target="_blank" rel="noopener">' . esc_html__( 'open an issue on GitHub', 'ilang-readable-slugs' ) . '</a>'
+				);
+				?>
+			</p>
 		</div>
 		<?php
 	}
