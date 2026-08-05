@@ -39,7 +39,7 @@ Example results:
 
 This plugin requires an API key for an OpenAI-compatible AI service. By default it calls SiliconFlow (https://siliconflow.cn), and you may point it at any other compatible provider in the settings.
 
-What is sent, and when: only the post title is transmitted, and only when you save a post whose title contains non-ASCII characters and has no usable slug yet. Post content, user data and site data are never sent.
+What is sent, and when: the post title, plus the optional "Site context" text you enter in the settings (if you fill it in), are transmitted. This happens when you save a post — published, scheduled, draft, pending or private — whose title contains non-ASCII characters and has no usable slug yet. Post body content and user data are never sent. Nothing is transmitted until you enter your own API key.
 
 SiliconFlow terms of service: https://docs.siliconflow.cn/en/legals/terms-of-service
 SiliconFlow privacy policy: https://docs.siliconflow.cn/en/legals/privacy-policy
